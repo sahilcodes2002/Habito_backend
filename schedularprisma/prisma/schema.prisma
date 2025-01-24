@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 Int              @id @default(autoincrement())
+  username           String           @unique
+  name               String
+  password           String
+  email              String?
+  created_at         DateTime         @default(now())
+  private            Boolean
+  notifications      Int
+  assigned_work      Works[]
+  assigned_subwork    SubWorks[]
+  todo               Todo[]
+  todobin            Todobin[]
+  projects           Project[]
+  folder             Folder[]
+  projectmessages    ProjectMessages[]
+  workhistory        Workhistory[]
+  projectinvite      ProjectInvite[]
+  sentMessages       Message[]        @relation("sentMessages")
+  receivedMessages   Message[]        @relation("receivedMessages")
+}
+
+
+model Emailwithcode{
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  code         String
+}
+
+model Workhistory {
+  id           Int      @id @default(autoincrement())
+  name         String
+  user_id      Int
+  hoursWorked  Int
+  minsWorked   Int
+  startHour    Int
+  startMinute  Int
+  endHour      Int
+  endMinute    Int
+  dateCreated  DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model Quotes {
+  id          Int      @id @default(autoincrement())
+  quote       String
+}
+
+model Todo {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String
+  completed   Boolean
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model Todobin {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String
+  completed   Boolean
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model Folder {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  title       String
+  color       Int
+  archive     Boolean
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  notes       Project[]
+
+  @@index([user_id])
+}
+
+model Project {
+  id              Int              @id @default(autoincrement())
+  user_id         Int
+  folder_id       Int
+  title           String
+  description     String
+  link            String?
+  hashtag         WorkTags[]
+  works           Works[]
+  projectmessages ProjectMessages[]
+  subworks        SubWorks[]
+  projectinvite   ProjectInvite[]
+  workmails       Mailworks[]
+  subworkmails    Mailsubworks[]
+  archive         Boolean
+  done            Boolean
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder          Folder   @relation(fields: [folder_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([folder_id])
+}
+
+model ProjectInvite{
+  id              Int              @id @default(autoincrement())
+  project_id      Int
+  user_id         Int
+  accepted        Boolean
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder          Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+model ProjectMessages {
+  id           Int      @id @default(autoincrement())
+  sender_id    Int
+  project_id   Int
+  content      String
+  important    Boolean
+  created_at   DateTime @default(now())
+  sender       User     @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([sender_id])
+  @@index([project_id])
+}
+
+model WorkTags {
+  id          Int      @id @default(autoincrement())
+  project_id  Int
+  tag         String
+  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+}
+
+model Works {
+  id          Int        @id @default(autoincrement())
+  project_id  Int
+  work        String
+  description String
+  assignto    Int
+  completed   Boolean
+  subworks    SubWorks[]
+  mails       Mailworks[]
+  created_at  DateTime   @default(now())
+  project     Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assign      User       @relation(fields: [assignto], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([assignto])
+}
+
+model SubWorks {
+  id        Int    @id @default(autoincrement())
+  work_id   Int
+  project_id Int
+  subwork   String
+  assignto Int
+  completed Boolean
+  mails     Mailsubworks[]
+  subdescription String
+  work      Works  @relation(fields: [work_id], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assigned    User       @relation(fields: [assignto], references: [id], onDelete: Cascade)
+  @@index([work_id])
+}
+
+model Mailworks{
+  id        Int    @id @default(autoincrement())
+  work_id   Int
+  title     String
+  description String?
+  email       String
+  project_id  Int 
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  work      Works  @relation(fields: [work_id], references: [id], onDelete: Cascade)
+}
+model Mailsubworks{
+  id        Int    @id @default(autoincrement())
+  subwork_id Int
+  title     String
+  description String?
+  email       String
+  project_id  Int 
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  subwork      SubWorks  @relation(fields: [subwork_id], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id            Int      @id @default(autoincrement())
+  sender_id     Int
+  receiver_id   Int
+  content       String
+  important     Boolean
+  created_at    DateTime @default(now())
+  sender        User     @relation("sentMessages", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver      User     @relation("receivedMessages", fields: [receiver_id], references: [id], onDelete: Cascade)
+
+  @@index([sender_id])
+  @@index([receiver_id])
+}
